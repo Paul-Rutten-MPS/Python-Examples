@@ -91,30 +91,28 @@ def action_changed(_meta_data: dict, payload: dict) -> dict:
 
     image_actions = utils.getSubmissionData(payload, "imageProcessingActions")[0]
 
-    for row in image_actions:
-        row = row["action1"]
-        registered = row["registeredAction"]
-        if (action := row["action"]) != registered:
-            # The action selection of this row was changed.
-            row["registeredAction"] = action
+    # Changed action row bookkeeping. Get the values, and register the changed action in the data.
+    changed_row_nr, action = utils.getSubmissionData(payload, "changedActionRow")[0]
+    row = image_actions[changed_row_nr]["action1"]
+    row["registeredAction"] = action
 
-            if action == [""] or action == "":
-                params = []
-            else:
-                params = action_param_list[action]
+    if action == [""] or action == "":
+        params = []
+    else:
+        params = action_param_list[action]
 
-            for p in params:
-                default_value = p.get("defaultValue", None)
-                if (
-                    hasattr(default_value, "__iter__")
-                    and not isinstance(default_value, str)
-                    and all(k not in p for k in ["minLength", "maxLength"])
-                ):
-                    # Default value is iterable, but no min or max length set. Use size of default.
-                    p["minLength"] = len(default_value)
-                    p["maxLength"] = len(default_value)
+    for p in params:
+        default_value = p.get("defaultValue", None)
+        if (
+            hasattr(default_value, "__iter__")
+            and not isinstance(default_value, str)
+            and all(k not in p for k in ["minLength", "maxLength"])
+        ):
+            # Default value is iterable, but no min or max length set. Use size of default.
+            p["minLength"] = len(default_value)
+            p["maxLength"] = len(default_value)
 
-            row["actionSettings"] = PropertyEditor.prepare_values(params)
+    row["actionSettings"] = PropertyEditor.prepare_values(params)
 
     utils.setSubmissionData(payload, "imageProcessingActions", image_actions)
 
