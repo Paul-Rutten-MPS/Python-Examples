@@ -42,7 +42,7 @@
             ],
             "key": "changedActionRow",
             "defaultValue": [
-                0,
+                -1,
                 ""
             ],
             "properties": {
