@@ -25,31 +25,32 @@ async function attachImageSlider(element) {
 
     let container = this.refs.extension;
 
-    // This function is asynchronous, so here we wait for the custom img-comparison-slider tag to be defined.
-    await window.customElements.whenDefined("img-comparison-slider");
+    if (container) {
+        // This function is asynchronous, so here we wait for the custom img-comparison-slider tag to be defined.
+        await window.customElements.whenDefined("img-comparison-slider");
 
-    return new Promise((resolve) => {
-        // Before we can assign event listeners, we need to wait for the elements to be created in the DOM tree.
-        // Hence, we set up an observer to wait for the elements to be created.
-        let observer = new MutationObserver((mutations, observer) => {
-            observer.disconnect();
+        return new Promise((resolve) => {
+            // Before we can assign event listeners, we need to wait for the elements to be created in the DOM tree.
+            // Hence, we set up an observer to wait for the elements to be created.
+            let observer = new MutationObserver((mutations, observer) => {
+                observer.disconnect();
 
-            let imgSlider = container.getElementsByTagName("img-comparison-slider")[0];
+                let imgSlider = container.getElementsByTagName("img-comparison-slider")[0];
 
-            imgSlider.addEventListener("slide", (e) => {
-                let value = this.getValue();
-                value.sliderValue = Math.round(1000 * e.target.exposure) / 1000;
-                this.setValue(value);
+                imgSlider.addEventListener("slide", (e) => {
+                    let value = this.getValue();
+                    value.sliderValue = Math.round(1000 * e.target.exposure) / 1000;
+                    this.setValue(value);
+                });
+
+                this.setValue(this.dataValue);
+                resolve(true);
             });
 
-            this.setValue(this.dataValue);
-            resolve(true);
-        });
+            observer.observe(container, { attributes: true, childList: true, subtree: true });
 
-        observer.observe(container, { attributes: true, childList: true, subtree: true });
-
-        // Now we can change the elements in the component, using the custom img-comparison-slider tag.
-        container.innerHTML = `
+            // Now we can change the elements in the component, using the custom img-comparison-slider tag.
+            container.innerHTML = `
             <img-comparison-slider class="img-comparison-slider w-100">
                 <figure slot="first" class="before">
                     <img class="w-100">
@@ -61,7 +62,8 @@ async function attachImageSlider(element) {
                 </figure>
             </img-comparison-slider>
             `;
-    });
+        });
+    }
 };
 
 /**
@@ -97,16 +99,18 @@ function getValueImageSlider() {
 function setValueImageSlider(value, flags) {
     let container = this.refs.extension;
 
-    let imgSlider = container.getElementsByTagName("img-comparison-slider")[0];
+    if (container) {
+        let imgSlider = container.getElementsByTagName("img-comparison-slider")[0];
 
-    // Setting the direction triggers another value change. Hence, we check the value to avoid infinite recursion.
-    if (imgSlider.direction !== value.direction) {
-        imgSlider.direction = value.direction;
+        // Setting the direction triggers another value change. Hence, we check the value to avoid infinite recursion.
+        if (imgSlider.direction !== value.direction) {
+            imgSlider.direction = value.direction;
+        }
+
+        imgSlider.value = value.sliderValue;
+        imgSlider.querySelector(".before img").src = value.img1Url ?? getDefaultImage(1);
+        imgSlider.querySelector(".after img").src = value.img2Url ?? getDefaultImage(2);
     }
-
-    imgSlider.value = value.sliderValue;
-    imgSlider.querySelector(".before img").src = value.img1Url ?? getDefaultImage(1);
-    imgSlider.querySelector(".after img").src = value.img2Url ?? getDefaultImage(2);
 }
 
 /**
